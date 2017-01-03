@@ -129,6 +129,16 @@ function analogAND (...)
   return andRes
 end
 
+function analogNOT (...)
+  local input = {...}
+  if #input ~= 1  then
+    error("Only 1 input", errorLevel)
+  end
+  validateSides(input)
+
+  return 15 - redstone.getAnalogInput(input[1])
+end
+
 function analogOutput (signalIntensity, ...)
   if type(signalIntensity) ~= "number" then
     error("Expected number, strings", errorLevel)
