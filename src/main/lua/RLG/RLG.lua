@@ -22,11 +22,35 @@ local function validateSides(tab)
   end
 end
 
+--- @param #boolean input flag for input or output
+--- @param #number num number of inputs/outputs needed
+--- @param #boolean lesser flag to indicate if comparison must be made with lesser operator or different operator
+local function validateInput(input, num, lesser, ...)
+  local inputStr
+  if input then
+    inputStr = "input"
+  else
+    inputStr = "output"
+  end
+  if num > 1 then
+  	inputStr = inputStr.."s"
+  end
+
+  local inputs = {...}
+  if lesser then
+    if #inputs < num then
+      error("Not enough "..inputStr..", min "..num, errorLevel)
+    end
+  else
+    if #inputs ~= num then
+      error("Only "..num.." "..inputStr, errorLevel)
+    end
+  end
+end
+
 function directAND (...)
   local input = {...}
-  if #input < 2  then
-    error("Not enough inputs, min 2", errorLevel)
-  end
+  validateInput(true,2,true,...)
   validateSides(input)
 
   local andRes = true
@@ -41,9 +65,7 @@ end
 
 function directOR (...)
   local input = {...}
-  if #input < 1  then
-    error("Not enough inputs, min 1", errorLevel)
-  end
+  validateInput(true,1,true,...)
   validateSides(input)
 
   local orRes = false
@@ -58,9 +80,7 @@ end
 
 function directXOR (...)
   local input = {...}
-  if #input ~= 2  then
-    error("Only 2 inputs", errorLevel)
-  end
+  validateInput(true,2,false,...)
   validateSides(input)
 
   local input1 = redstone.getInput(input[1])
@@ -72,9 +92,7 @@ end
 
 function directNOT (...)
   local input = {...}
-  if #input ~= 1  then
-    error("Only 1 input", errorLevel)
-  end
+  validateInput(true,1,false,...)
   validateSides(input)
 
   return not redstone.getInput(input[1])
@@ -85,21 +103,17 @@ function directOutput (signal, ...)
     error("Expected boolean, strings",errorLevel)
   end
   local output = {...}
-  if #output < 1 then
-    error("At least 1 output is needed",errorLevel)
-  end
+  validateInput(false,1,true,...)
   validateSides(output)
 
   for _, v in pairs(output) do
-  	redstone.setOutput(v, signal)
+    redstone.setOutput(v, signal)
   end
 end
 
 function analogOR (...)
   local input = {...}
-  if #input < 1  then
-    error("Not enough inputs, min 1", errorLevel)
-  end
+  validateInput(true,1,true,...)
   validateSides(input)
 
   local orRes = 0
@@ -114,9 +128,7 @@ end
 
 function analogAND (...)
   local input = {...}
-  if #input < 2  then
-    error("Not enough inputs, min 2", errorLevel)
-  end
+  validateInput(true,2,true,...)
   validateSides(input)
 
   local andRes = 15
@@ -131,9 +143,7 @@ end
 
 function analogNOT (...)
   local input = {...}
-  if #input ~= 1  then
-    error("Only 1 input", errorLevel)
-  end
+  validateInput(true,1,false,...)
   validateSides(input)
 
   return 15 - redstone.getAnalogInput(input[1])
@@ -144,9 +154,7 @@ function analogOutput (signalIntensity, ...)
     error("Expected number, strings", errorLevel)
   end
   local output = {...}
-  if #output < 1 then
-    error("At least 1 output is needed", errorLevel)
-  end
+  validateInput(false,1,true,...)
   validateSides(output)
 
   for _, v in pairs(output) do
@@ -156,16 +164,14 @@ end
 
 function bundledOR (...)
   local input = {...}
-  if #input < 1 then
-    error("Not enough inputs, min 1", errorLevel)
-  end
+  validateInput(true,1,true,...)
   validateSides(input)
 
   local orRes = 0
   local i = 1
   while input[i] do
-  	orRes = bit.bor(orRes, redstone.getBundledInput(input[i]))
-  	i = i + 1
+    orRes = bit.bor(orRes, redstone.getBundledInput(input[i]))
+    i = i + 1
   end
 
   return orRes
@@ -173,9 +179,7 @@ end
 
 function bundledAND (...)
   local input = {...}
-  if #input < 2 then
-    error("Not enough inputs, min 2", errorLevel)
-  end
+  validateInput(true,2,true,...)
   validateSides(input)
 
   local andRes = 65535
@@ -189,10 +193,8 @@ function bundledAND (...)
 end
 
 function bundledXOR (...)
-	local input = {...}
-  if #input ~= 2 then
-    error("Only 2 inputs", errorLevel)
-  end
+  local input = {...}
+  validateInput(true,2,false,...)
   validateSides(input)
 
   return bit.bxor(redstone.getBundledInput(input[1]), redstone.getBundledInput(input[2]))
@@ -200,9 +202,7 @@ end
 
 function bundledNOT (...)
   local input = {...}
-  if #input ~= 1 then
-    error("Only 1 input", errorLevel)
-  end
+  validateInput(true,1,false,...)
   validateSides(input)
 
   return bit.bnot(input[1])
@@ -213,13 +213,11 @@ function bundledOutput (signals, ...)
     error("Expected number, strings", errorLevel)
   end
   local output = {...}
-  if #output < 1 then
-  	error("At least 1 output is needed", errorLevel)
-  end
+  validateInput(false,1,true,...)
   validateSides(output)
 
   for _, v in pairs(output) do
-  	redstone.setBundledOutput(v, signals)
+    redstone.setBundledOutput(v, signals)
   end
 end
 
@@ -228,19 +226,19 @@ function basicClear (...)
   validateSides(sides)
 
   for _, v in pairs(sides) do
-  	redstone.setOutput(v, false)
+    redstone.setOutput(v, false)
   end
 end
 
 function basicClearAll ()
   for _, v in pairs(redstone.getSides()) do
-  	redstone.setOutput(v, false)
+    redstone.setOutput(v, false)
   end
 end
 
 function bundledClearSignals (signals, ...)
   if type(signals) ~= "number" then
-  	error("Signals not a number", errorLevel)
+    error("Signals not a number", errorLevel)
   end
   local sides = {...}
   validateSides(sides)
@@ -255,12 +253,12 @@ function bundledClear (...)
   validateSides(sides)
 
   for _, v in pairs(sides) do
-  	redstone.setBundledOutput(v, 0)
+    redstone.setBundledOutput(v, 0)
   end
 end
 
 function bundledClearAll ()
-	for _, v in pairs(redstone.getSides()) do
+  for _, v in pairs(redstone.getSides()) do
     redstone.setBundledOutput(v, 0)
-	end
+  end
 end
