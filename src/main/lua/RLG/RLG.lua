@@ -304,4 +304,6 @@ function gateLoop (loopFunction, keyToStop, ...)
   end
 
   parallel.waitForAny(keyListener, loopImpl, ...)
+  basicClearAll()
+  bundledClearAll()
 end
