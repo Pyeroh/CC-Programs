@@ -1,6 +1,7 @@
 -- local redstone = require("redstone")
 -- local colors = require("colors")
 -- local bit = require("bit")
+-- local keys = require("keys")
 
 local errorLevel = 2
 local availableSides = redstone.getSides()
@@ -33,7 +34,7 @@ local function validateInput(input, num, lesser, ...)
     inputStr = "output"
   end
   if num > 1 then
-  	inputStr = inputStr.."s"
+    inputStr = inputStr.."s"
   end
 
   local inputs = {...}
@@ -261,4 +262,46 @@ function bundledClearAll ()
   for _, v in pairs(redstone.getSides()) do
     redstone.setBundledOutput(v, 0)
   end
+end
+
+function gateLoop (loopFunction, keyToStop, ...)
+  if type(loopFunction) ~= "function" then
+    error("First parameter is not a function", errorLevel)
+  end
+  local keyName = keys.getName(keyToStop)
+  if not keyName then
+    error("Not a valid key", errorLevel)
+  end
+
+  local keyListener = function()
+    local stop = false
+    while not stop do
+      os.sleep(0)
+      local event, key = os.pullEvent("key_up")
+      if event == "key_up" and key == keyToStop then
+        stop = true
+      end
+    end
+  end
+
+  local loopImpl = function()
+    while true do
+      loopFunction()
+      os.sleep(0)
+    end
+  end
+
+  local breakerFunctions = {...}
+  for _, v in pairs(breakerFunctions) do
+  	if type(v) ~= "function" then
+  	  error("One of varargs is not a function", errorLevel)
+  	end
+  end
+
+  print("Waiting for user to press '"..keyName.."' to stop the gate loop")
+  if #breakerFunctions > 0 then
+    print("or another function to end")
+  end
+
+  parallel.waitForAny(keyListener, loopImpl, ...)
 end
